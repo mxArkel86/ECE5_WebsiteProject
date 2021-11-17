@@ -48,10 +48,11 @@ void loop() { /* Loop - loops forever (until unpowered or reset) */
   ReadPhotoResistors();
   NormalizePhotoResistorValues();
   // Call on user-defined function to read Potentiometer values
-  Sp = /* FIX ME, replace this comment with actual function name */ (S_pin, 0, 1023, 0, 100);
-  kP = /* FIX ME, replace this comment with actual function name */ (P_pin, 0, 1023, 0, 100);
-  kI = /* FIX ME, replace this comment with actual function name */ (I_pin, 0, 1023, 0, 100);
-  kD = /* FIX ME, replace this comment with actual function name */ (D_pin, 0, 1023, 0, 100);
+
+  //Sp = /* FIX ME, replace this comment with actual function name */ (S_pin, 0, 1023, 0, 100);
+  //kP = /* FIX ME, replace this comment with actual function name */ (P_pin, 0, 1023, 0, 100);
+  //kI = /* FIX ME, replace this comment with actual function name */ (I_pin, 0, 1023, 0, 100);
+  //kD = /* FIX ME, replace this comment with actual function name */ (D_pin, 0, 1023, 0, 100);
 
   Print(); // Call on user-defined function to print values from potentiometers
 }
