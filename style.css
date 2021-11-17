@@ -98,7 +98,13 @@ body{
     font-weight: bold;
   }
   
+  label{
+    margin: 0;
+    text-align: left;
+    padding: 0;
+  }
   
   .imgmar{
     margin: 1.5%;
+    width: 50%;
   }

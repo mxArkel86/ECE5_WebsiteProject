@@ -11,42 +11,39 @@ int kD = 0;           // derivative gain coeficient
 
 #define BLACK 0
 #define WHITE 1023
-
-//PHOTORESISTOR DEF
 #define totalPhotoResistors 7 // Defining how many photoresistors are used, modify this if more or less are used
 
 //DECLARE FUNCTIONS
 void InitWeights(int);
+void SmartDelay(int,float);
+void ReadPhotoresistors();
+void ReadPotentiometers();
+void MapPhotoresistor(int, int, int, int, int);
+void NormalizePhotoresistorValues();
+//---------------
 
 struct Weight{
-  int while_val = WHITE;
+  int white_val = WHITE;
   int black_val = BLACK;
 };
+
 // Initialize Photo Resistor Array
 int PRVals[totalPhotoResistors]; // Since there are 7 photoresistors, we will number them from 0 to 6 (recall array index start with 0)
 Weight PRWeights[totalPhotoResistors];
-
-void SmartDelay(int n, int m=1){// {MS}, {TIME INCREMENT (0.5)}
-  for(float i =0;i<n;i+=m){
-    delay((int)(m*1000));
-    Serial.print("t=");
-    Serial.println(n-i);
-  }
-}
 
 void setup() { /* Setup - runs once (when power is supplied or after reset) */
   Serial.begin(9600); // For serial communication set up
   
   Serial.println("INIT WHITE");
-  SmartDelay(3000, 0.5);
+  SmartDelay(3, 0.5);
   InitWeights(WHITE);
   
   Serial.println("INIT BLACK");
-  SmartDelay(3000, 0.5);
+  SmartDelay(3, 0.5);
   InitWeights(BLACK);
 }
 
-void ReadPhotoResistors() {
+void ReadPhotoresistors() {
   int photoResistorCounter = 0;
   // looping through analog pins A8 to A14 and storing their values into our LDR array
   for (byte pin = A8; pin <= A14; pin++) {
@@ -56,49 +53,51 @@ void ReadPhotoResistors() {
   }
 }
 
-int MapPhotoResistor(int val, int min_resolution, int max_resolution, int min_potentiometer, int max_potentiometer) {
-  return map(val, min_resolution, max_resolution, min_potentiometer, max_potentiometer);
-}
 
 void InitWeights(int type){
-  ReadPhotoResistors();
+  ReadPhotoresistors();
   if(type==WHITE){//white
     for(int i =0;i<totalPhotoResistors;i++){
-      PRWeights[i].while_val = PRVals;
+      PRWeights[i].white_val = PRVals[i];
     }
   }else if(type==BLACK){//black
     for(int i =0;i<totalPhotoResistors;i++){
-      PRWeights[i].black_val = PRVals;
+      PRWeights[i].black_val = PRVals[i];
     }
   }
 }
 
 
-void NormalizePhotoResistorValues(){
+
+void NormalizePhotoresistorValues(){
   for(int i =0;i<totalPhotoResistors;i++){
     Weight w = PRWeights[i];
     int val = PRVals[i];
-    int outval = MapPhotoResistor(val, w.while_val, w.black_val, 0, 1023);
+    int outval = MapPhotoresistor(val, w.white_val, w.black_val, 0, 1023);
     PRVals[i] = outval;
   }
 }
 
 void ReadPotentiometers(){
-
+  Sp = analogRead(S_pin);
+  kP = analogRead(P_pin);
+  kI = analogRead(I_pin);
+  kD = analogRead(D_pin);
 }
 
 void loop() { /* Loop - loops forever (until unpowered or reset) */
   
-  ReadPhotoResistors();
-  NormalizePhotoResistorValues();
+  ReadPhotoresistors();
+  NormalizePhotoresistorValues();
   // Call on user-defined function to read Potentiometer values
 
   //Sp = /* FIX ME, replace this comment with actual function name */ (S_pin, 0, 1023, 0, 100);
   //kP = /* FIX ME, replace this comment with actual function name */ (P_pin, 0, 1023, 0, 100);
   //kI = /* FIX ME, replace this comment with actual function name */ (I_pin, 0, 1023, 0, 100);
   //kD = /* FIX ME, replace this comment with actual function name */ (D_pin, 0, 1023, 0, 100);
-
-  Print(); // Call on user-defined function to print values from potentiometers
+  
+  //PrintPot(); // Call on user-defined function to print values from potentiometers
+  //PrintPR();
 }
 
 // ************************************************************************************************* //
@@ -106,15 +105,36 @@ void loop() { /* Loop - loops forever (until unpowered or reset) */
 
 // ************************************************************************************************* //
 // function to print values of interest
-void Print() {
 
-  Serial.print(Sp);
-  Serial.print(" ");
-  Serial.print(kP);
-  Serial.print(" ");
-  Serial.print(kI);
-  Serial.print(" ");
-  Serial.println(kD);
+void PrintPR(){
+  for(int i =0;i<totalPhotoResistors;i++){
+    Serial.print("[");
+    Serial.print(i);
+    Serial.print("]: ");
+    Serial.print(PRVals[i]);
+    Serial.println(" ");
+  }
+}
 
-  delay(200); //just here to slow down the output for easier reading if desired
+void PrintPot(){
+  Serial.print("S=");
+    Serial.print(Sp);
+    Serial.print(" P=");
+    Serial.print(kP);
+    Serial.print(" I=");
+    Serial.print(kI);
+    Serial.print(" D=");
+    Serial.println(kD);
+}
+
+void SmartDelay(int n, float m){// {MS}, {TIME INCREMENT (0.5)}
+  for(float i =0;i<n;i+=m){
+    delay((int)(m*1000));
+    Serial.print("t=");
+    Serial.println(n-i);
+  }
+}
+
+int MapPhotoresistor(int val, int min_val_spec, int max_val_spec, int min_out, int max_out) {
+  return map(val, min_val_spec, max_val_spec, min_out, max_out);
 }
