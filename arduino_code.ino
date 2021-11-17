@@ -13,8 +13,8 @@ int kD = 0;           // derivative gain coeficient
 #define totalPhotoResistors 7 // Defining how many photoresistors are used, modify this if more or less are used
 
 struct Weight{
-  int while_val;
-  int black_val;
+  int while_val = 1023;
+  int black_val = 0;
 }
 // Initialize Photo Resistor Array
 int PRVals[totalPhotoResistors]; // Since there are 7 photoresistors, we will number them from 0 to 6 (recall array index start with 0)
