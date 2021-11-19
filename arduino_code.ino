@@ -4,10 +4,15 @@ const int S_pin = A0; // proportional - analog pin 0
 const int P_pin = A1; // proportional - analog pin 1
 const int I_pin = A2; // integral - analog pin 2
 const int D_pin = A3; // derivative - analog pin 3
+const int STATUS_BTN_PIN = 12;
+const int RGB_R 10;
+const int RGB_G 11;
+const int RGB_B 12;
 int Sp = 0;           // speed gain coeficient
 int kP = 0;           // proportional gain coeficient
 int kI = 0;           // integral gain coeficient
 int kD = 0;           // derivative gain coeficient
+int status_btn = LOW;
 
 #define BLACK 0
 #define WHITE 1023
@@ -18,8 +23,8 @@ void InitWeights(int);
 void SmartDelay(int,float);
 void ReadPhotoresistors();
 void ReadPotentiometers();
-void MapPhotoresistor(int, int, int, int, int);
 void NormalizePhotoresistorValues();
+void ReadButtonValues();
 //---------------
 
 struct Weight{
@@ -73,7 +78,7 @@ void NormalizePhotoresistorValues(){
   for(int i =0;i<totalPhotoResistors;i++){
     Weight w = PRWeights[i];
     int val = PRVals[i];
-    int outval = MapPhotoresistor(val, w.white_val, w.black_val, 0, 1023);
+    int outval = map(val, w.white_val, w.black_val, 0, 100);
     PRVals[i] = outval;
   }
 }
@@ -83,11 +88,21 @@ void ReadPotentiometers(){
   kP = analogRead(P_pin);
   kI = analogRead(I_pin);
   kD = analogRead(D_pin);
+
+  Sp = map(Sp, 0, 1023, 0, 100);
+  kP = map(kP, 0, 1023, 0, 100);
+  kI = map(kI, 0, 1023, 0, 100);
+  kD = map(kD, 0, 1023, 0, 100);
+}
+
+void ReadButtonValues(){
+  status_btn = digitalRead(STATUS_BTN_PIN);
 }
 
 void loop() { /* Loop - loops forever (until unpowered or reset) */
   
   ReadPhotoresistors();
+  ReadPotentiometers();
   NormalizePhotoresistorValues();
   // Call on user-defined function to read Potentiometer values
 
@@ -97,7 +112,7 @@ void loop() { /* Loop - loops forever (until unpowered or reset) */
   //kD = /* FIX ME, replace this comment with actual function name */ (D_pin, 0, 1023, 0, 100);
   
   //PrintPot(); // Call on user-defined function to print values from potentiometers
-  //PrintPR();
+  PrintPR();
 }
 
 // ************************************************************************************************* //
@@ -128,13 +143,9 @@ void PrintPot(){
 }
 
 void SmartDelay(int n, float m){// {MS}, {TIME INCREMENT (0.5)}
-  for(float i =0;i<n;i+=m){
+  for(float i =0;i<=n;i+=m){
     delay((int)(m*1000));
     Serial.print("t=");
     Serial.println(n-i);
   }
-}
-
-int MapPhotoresistor(int val, int min_val_spec, int max_val_spec, int min_out, int max_out) {
-  return map(val, min_val_spec, max_val_spec, min_out, max_out);
 }
