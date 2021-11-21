@@ -1,3 +1,6 @@
+
+
+
 // TO-DO: ADD LOGIC FOR MODES! I.E., CHANGE CERTAIN FACTORS DEPENDING ON THE CHALLENGE 
 // ALSO: FINE TUNE PID CONSTANTS! THIS WILL TAKE TRIAL/ERROR!
 // ACTUALLY BOTH OF THESE WILL REQUIRE TESTING!
@@ -11,12 +14,12 @@
 #define totalPhotoResistors 7
 
 // Pins
-#define S_pin A0 // PIN NUMBERS MAY NEED TO BE UPDATED !!
-#define P_pin A1
-#define I_pin A2
-#define D_pin A3
-#define buttonPin 7;
-const int RGB_Pin[3] {5, 4, 3};
+#define S_pin A5 // PIN NUMBERS MAY NEED TO BE UPDATED !!
+#define P_pin A7
+#define I_pin A3
+#define D_pin A15
+#define buttonPin 50
+const int RGB_Pin[3] {46,52,48};
 const int PR_Pins[totalPhotoResistors] = {A8, A9, A10, A11, A12, A13, A14};
 
 // Initial Motor Speeds. Motor speeds range from 0-255. Change speed of single motor depending on turn. 
@@ -39,13 +42,13 @@ Adafruit_DCMotor *Motor1 = AFMS.getMotor(1); // Motors can be switched here (1) 
 Adafruit_DCMotor *Motor2 = AFMS.getMotor(2);
 
 // Error
-float error, lasterror = 0, sumerror = 0;
+float error, lastError = 0, sumerror = 0;
 int threshold = 20; // if photoresistor value is under threshold, it is detecting a line
 
 // PID values
-int Kp;
-int Ki;
-int Kd;
+int kP;
+int kI;
+int kD;
 
 float PIDvalue;
 
@@ -54,123 +57,130 @@ float PIDvalue;
 int Sp;
 
 void setup() {
+  
   Serial.begin(9600);
 
-	// Define I/O
-	pinMode(S_pin, INPUT);
-	pinMode(P_pin, INPUT);
-	pinMode(I_pin, INPUT);
-	pinMode(D_pin, INPUT);
-	pinMode(buttonPin, INPUT);
+  // Define I/O
+  pinMode(S_pin, INPUT);
+  pinMode(P_pin, INPUT);
+  pinMode(I_pin, INPUT);
+  pinMode(D_pin, INPUT);
+  pinMode(buttonPin, INPUT);
 
-	for (int i = 0; i < totalPhotoResistors; i++) {
-  	pinMode(PR_Pins[i], INPUT);
-	}
+  for (int i = 0; i < totalPhotoResistors; i++) {
+    pinMode(PR_Pins[i], INPUT);
+  }
 
-	pinMode(RGB_Pin[0], OUTPUT);
-	pinMode(RGB_Pin[1], OUTPUT);
-	pinMode(RGB_Pin[2], OUTPUT);
+  pinMode(RGB_Pin[0], OUTPUT);
+  pinMode(RGB_Pin[1], OUTPUT);
+  pinMode(RGB_Pin[2], OUTPUT);
 
-	AFMS.begin();       //for Motor
+  AFMS.begin();       //for Motor
 
-	/* 	Calibrate photoresistors
-		Read potentiometers
-		Start motors/start moving
-	*/
+  /*  Calibrate photoresistors
+    Read potentiometers
+    Start motors/start moving
+  */
 
-	Calibrate();
+  Calibrate();
 
 }
 
 void loop() {
-	readButton(); // change mode of car accordingly
-	if (mode) { // if mode = 0 the car is effectively off
+  readButton(); // change mode of car accordingly
+  if (mode) { // if mode = 0 the car is effectively off
 
-		/*	Read potentiometers
-		Read photoresistors
-		Calculate error 
-		Use PID to calculate turn rate given the error
-		Run motors with adjusted turn rate values
-		*/
-
-
-	  Sp = ReadPotentiometer(S_pin, 0, 1023, 0, 100);
-		kP = ReadPotentiometer(P_pin, 0, 1023, 0, 100);
-		kI = ReadPotentiometer(I_pin, 0, 1023, 0, 100);
-		kD = ReadPotentiometer(D_pin, 0, 1023, 0, 100);
-
-		ReadPhotoResistors();
-
-		CalcError();
-
-		calculatePID();
-
-		// Physical turn.
-
-		RunMotors(PIDvalue);
+    /*  Read potentiometers
+    Read photoresistors
+    Calculate error 
+    Use PID to calculate turn rate given the error
+    Run motors with adjusted turn rate values
+    */
 
 
-	}
-	
+    Sp = ReadPotentiometer(S_pin, 0, 1023, 0, 100);
+    kP = ReadPotentiometer(P_pin, 0, 1023, 0, 100);
+    kI = ReadPotentiometer(I_pin, 0, 1023, 0, 100);
+    kD = ReadPotentiometer(D_pin, 0, 1023, 0, 100);
+
+    ReadPhotoResistors();
+
+    CalcError();
+
+    calculatePID();
+
+    // Physical turn.
+
+    RunMotors(PIDvalue);
+
+    Print();
+
+
+  }
+  
 }
 
 // Calibration
 void Calibrate() {
-	writeColor(255, 255, 0); // YELLOW indicator, lasts for 5 seconds
-	delay(5000);
+  writeColor(255,150,0); // YELLOW indicator, lasts for 5 seconds
+  delay(5000); // decreased for debugging
 
-	writeColor(105, 105, 105); // GREY indicator means that calibration for black has begun
+  writeColor(105, 105, 105); // GREY indicator means that calibration for black has begun
 
-	int numSamples = 100; // number of samples to calibrate with
+  int numSamples = 100; // number of samples to calibrate with
 
-	float samples[numSamples]; // stores the samples. Same array can be rewritten for second phase 
+  float samples[numSamples]; // stores the samples. Same array can be rewritten for second phase 
 
-	// Calibrate black
-	for (int i = 0; i < totalPhotoResistors; i++) {
-		for(int j = 0; j < numSamples; j++) {
-			samples[j] = analogRead(PR_Pins[i]); // populate samples
-		}
+  // Calibrate black
+  for (int i = 0; i < totalPhotoResistors; i++) {
+    for(int j = 0; j < numSamples; j++) {
+      samples[j] = analogRead(PR_Pins[i]); // populate samples
+    }
 
-		float sum = 0; // take the average and store it accordingly
-		for (int k = 0; k < numSamples; k++) {
-			sum = sum + samples[k];
-		}
+    float sum = 0; // take the average and store it accordingly
+    for (int k = 0; k < numSamples; k++) {
+      sum = sum + samples[k];
+    }
 
-		black_values[i] = sum / numSamples;
+    black_values[i] = sum / numSamples;
 
-	}
+  }
+
+  delay(1000);
 
 
-	writeColor(255, 255, 0);  // YELLOW indicator, lasts for 5 seconds
-	delay(5000);
+  writeColor(255,150,0); // YELLOW indicator, lasts for 5 seconds
+  delay(5000);
 
-	writeColor(255, 255, 255); // WHITE indicator means that calibration for white has begun
+  writeColor(255, 255, 255); // WHITE indicator means that calibration for white has begun
 
-	// Calibrate white
-	for (int i = 0; i < totalPhotoResistors; i++) {
-		for(int j = 0; j < numSamples; j++) {
-			samples[j] = analogRead(PR_Pins[i]); // populate samples
-		}
+  // Calibrate white
+  for (int i = 0; i < totalPhotoResistors; i++) {
+    for(int j = 0; j < numSamples; j++) {
+      samples[j] = analogRead(PR_Pins[i]); // populate samples
+    }
 
-		float sum = 0; 
-		for (int k = 0; k < numSamples; k++) {
-			sum = sum + samples[k];
-		}
+    float sum = 0; 
+    for (int k = 0; k < numSamples; k++) {
+      sum = sum + samples[k];
+    }
 
-		white_values[i] = sum / numSamples;
+    white_values[i] = sum / numSamples;
 
-	}
+  }
 
-	ledOff(); // Calibration is complete
+  delay(1000);
+
+  ledOff(); // Calibration is complete
 
 }
 
 // Read sensors
 void ReadPhotoResistors() {
   for (int i = 0; i < totalPhotoResistors; i++) {
-  	// Syntax: map(value, fromLow, fromHigh, toLow, toHigh)
+    // Syntax: map(value, fromLow, fromHigh, toLow, toHigh)
     PR_Vals[i] = map(analogRead(PR_Pins[i]), black_values[i], white_values[i], 0, 100);
-    delay(2);
+    delay(10);
   }
 }
 
@@ -180,52 +190,52 @@ int ReadPotentiometer(int pin, int min_resolution, int max_resolution, int min_p
 
 // Calculate Error
 void CalcError() {
-	// weighted average
-	float average = 0;
-	int numDetected = 0;
-	for (int i = 0; i < totalPhotoResistors; i++) {
-		if (PR_Vals[i] < threshold) {
-			average = average + (i+1)
-			numDetected++;
-		}
-	}
-	average = average / numDetected;
-	if (average != 4) {
-		error = 1/(4 - (average / numDetected))
-	} else {
-		error = 0;
-	}
+  // weighted average
+  float average = 0;
+  int numDetected = 0;
+  for (int i = 0; i < totalPhotoResistors; i++) {
+    if (PR_Vals[i] < threshold) {
+      average = average + (i+1);
+      numDetected++;
+    }
+  }
+  average = average / numDetected;
+  if (average != 4) {
+    error = (4 - (average));
+  } else {
+    error = 0;
+  }
 
 
 }
 
 void calculatePID() { // I actually have no clue if this is going to work we have to test
-	error = error*3 // map error into range from -3 to 3
-	float P = error;
-	float I = sumerror;
-	float D = error - lastError;
+  float P = error;
+  float I = sumerror;
+  float D = error - lastError;
+//
+  kP = kP / 1; // scale values into 0 - 100
+  kI = kI / 1000;
+  kD = kD / 100;
 
-	kP = kP / 1; // scale values into 0 - 100
-	kI = kI / 1000;
-	kD = kD / 100;
 
+  PIDvalue = (kP*P) + (kI*I) +(kD*D);
 
-	PIDvalue = (Kp*P) + (Ki*I) +(Kd*D);
+  sumerror = sumerror + error;
+  if (sumerror > 5) {
+    sumerror = 5;
+  } // prevents integrator wind-up
+  else if (sumerror < -5) {
+    sumerror = -5;
+  }
 
-	sumerror = sumerror + error;
-	if (sumerror > 5) {
-		sumerror = 5;
-	} // prevents integrator wind-up
-	else if (sumerror < -5) {
-		sumerror = -5;
-	}
-
-	lasterror = error;
+  lastError = error;
 
 }
 
 // LED Control
 void writeColor(int r, int g, int b) {
+  Serial.print("LED FUNCTION CALLED");
   analogWrite(RGB_Pin[0], r);
   analogWrite(RGB_Pin[1], b);
   analogWrite(RGB_Pin[2], g);
@@ -238,7 +248,7 @@ void ledOff() {
 }
 
 void colorSwitch() {
-  switch change(mode) {
+  switch (mode) {
     case 0:
       ledOff();
       break;
@@ -258,44 +268,59 @@ void colorSwitch() {
 
 // Read Button
 void readButton() {
-	buttonState = digitalRead(buttonPin);
-	if(buttonState == HIGH) {
-  	if (mode < 3) {
-   		mode++;
-   	}
-  } else {
-    mode = 0;
-  }
-  delay(200);
+  int buttonState = digitalRead(buttonPin);
+  if(buttonState == HIGH) {
+    if (mode < 3) {
+      mode++;
+    } else {
+      mode = 0;
+    }
+    delay(200);
+  } 
+  
+  colorSwitch();
 }
 
 // Run the motors
 void RunMotors(int turn) {
-	if (turn < 0) {
-		Motor1->setSpeed(SpeedM1-abs(turn));
-		Motor2->setSpeed(SpeedM2);
-	}
-	else if (turn > 0) {
-		Motor1->setSpeed(SpeedM1);
-		Motor2->setSpeed(SpeedM2-abs(turn));
-	} else {
-		Motor1->setSpeed(SpeedM1);
-		Motor2->setSpeed(SpeedM2);
+  if (turn < 0) {
+    Motor1->setSpeed(SpeedM1-abs(turn));
+    Motor2->setSpeed(SpeedM2);
+  }
+  else if (turn > 0) {
+    Motor1->setSpeed(SpeedM1);
+    Motor2->setSpeed(SpeedM2-abs(turn));
+  } else {
+    Motor1->setSpeed(SpeedM1);
+    Motor2->setSpeed(SpeedM2);
 
-	}
-	motor->run(FORWARD);
+  }
+  Motor1->run(FORWARD);
+  Motor2->run(FORWARD);
 }
 
 // print stuff to console idk
 void Print() {
-  Serial.print("S=");
-  Serial.print(Sp);
-  Serial.print(" P=");
-  Serial.print(kP);
-  Serial.print(" I=");
-  Serial.print(kI);
-  Serial.print(" D=");
-  Serial.println(kD);
+//  Serial.print("S=");
+//  Serial.print(Sp);
+//  Serial.print(" P=");
+//  Serial.print(kP);
+//  Serial.print(" I=");
+//  Serial.print(kI);
+//  Serial.print(" D=");
+//  Serial.println(kD);
+
+//for (int i=0; i<totalPhotoResistors; i++) {
+//  Serial.print(PR_Vals[i]);
+//  Serial.print(" ");
+//}
+
+
+Serial.print(mode);
+Serial.print("\n");
+
+
+  
 
   // might have to add print statements depending on debug/testing
 
