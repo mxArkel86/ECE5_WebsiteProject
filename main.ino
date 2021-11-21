@@ -1,6 +1,3 @@
-
-
-
 // TO-DO: ADD LOGIC FOR MODES! I.E., CHANGE CERTAIN FACTORS DEPENDING ON THE CHALLENGE 
 // ALSO: FINE TUNE PID CONSTANTS! THIS WILL TAKE TRIAL/ERROR!
 // ACTUALLY BOTH OF THESE WILL REQUIRE TESTING!
@@ -13,12 +10,29 @@
 
 #define totalPhotoResistors 7
 
+
+// IR Control
+#include <IRremote.h>
+#define ON_OFF_KEY 0// TO-DO; ADD HEX VALUES FOR REMOTE CODES!
+#define UP_ARROW 0
+#define RIGHT_ARROW 0
+#define LEFT_ARROW 0
+#define DOWN_ARROW 0
+#define CIRCLE_KEY 0
+#define A_KEY 0
+#define B_KEY 0
+#define C_KEY 0
+
+#define RECV_PIN 50
+
+IRrecv irrecv(RECV_PIN);  // Initialize IR Library
+decode_results results;   // Initialize IR Library
+
 // Pins
 #define S_pin A5 // PIN NUMBERS MAY NEED TO BE UPDATED !!
 #define P_pin A7
 #define I_pin A3
 #define D_pin A15
-#define buttonPin 50
 const int RGB_Pin[3] {46,52,48};
 const int PR_Pins[totalPhotoResistors] = {A8, A9, A10, A11, A12, A13, A14};
 
@@ -29,7 +43,7 @@ int SpeedM2 = 255;
 int PR_Vals[totalPhotoResistors]; // Stores the color of each photoresistor
 
 // Mode that the car is in
-int mode = 0; // ranges 0-3
+int mode = 0; // ranges 0-4
 
 // The highest and lowest values for each photoresistor during calibration. 
 // Each photoresistor will have different slightly different calibration
@@ -38,8 +52,8 @@ float white_values[totalPhotoResistors];
 
 // Initialize Motors
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-Adafruit_DCMotor *Motor1 = AFMS.getMotor(1); // Motors can be switched here (1) <--> (2)
-Adafruit_DCMotor *Motor2 = AFMS.getMotor(2);
+Adafruit_DCMotor *leftWheel = AFMS.getMotor(1); // Motors can be switched here (1) <--> (2)
+Adafruit_DCMotor *rightWheel = AFMS.getMotor(2);
 
 // Error
 float error, lastError = 0, sumerror = 0;
@@ -60,12 +74,13 @@ void setup() {
   
   Serial.begin(9600);
 
+  irrecv.enableIRIn();  // Start the receiver
+
   // Define I/O
   pinMode(S_pin, INPUT);
   pinMode(P_pin, INPUT);
   pinMode(I_pin, INPUT);
   pinMode(D_pin, INPUT);
-  pinMode(buttonPin, INPUT);
 
   for (int i = 0; i < totalPhotoResistors; i++) {
     pinMode(PR_Pins[i], INPUT);
@@ -87,9 +102,12 @@ void setup() {
 }
 
 void loop() {
-  readButton(); // change mode of car accordingly
-  if (mode) { // if mode = 0 the car is effectively off
+  
+  modeDetection();
+  delay(100);
 
+  if (mode && mode != 4) { // if mode = 0 the car is effectively off
+    
     /*  Read potentiometers
     Read photoresistors
     Calculate error 
@@ -114,8 +132,14 @@ void loop() {
     RunMotors(PIDvalue);
 
     Print();
-
-
+      
+    
+  } else if (mode == 4) {
+     manualControl();
+     delay(100);
+  }
+    else {
+    ledOff();
   }
   
 }
@@ -171,7 +195,6 @@ void Calibrate() {
 
   delay(1000);
 
-  ledOff(); // Calibration is complete
 
 }
 
@@ -261,42 +284,77 @@ void colorSwitch() {
     case 3:
       writeColor(0, 0, 255);
       break;
+    case 4:
+      writeColor(0,255,255);
     default:
       break;
   }
 }
 
 // Read Button
-void readButton() {
-  int buttonState = digitalRead(buttonPin);
-  if(buttonState == HIGH) {
-    if (mode < 3) {
-      mode++;
-    } else {
-      mode = 0;
+void modeDetection() {
+  if (irrecv.decode(&results)) {
+    // Serial.println(results.value, HEX);  // Prints HEX code IR receiver receives
+    irrecv.resume(); // Receive the next value
+    
+    // Restart
+    if (results.value == ON_OFF_KEY) {
+      setup();
     }
-    delay(200);
-  } 
-  
+    
+    if (results.value == A_KEY)      
+       mode = 1;
+    else if (results.value == B_KEY) 
+      mode = 2;
+    else if (results.value == C_KEY) // Brightness down
+      mode = 3;
+    else if (results.value == CIRCLE_KEY) // Circle
+      mode = 4;
+    
+  }
   colorSwitch();
+}
+
+void manualControl() {
+  if (irrecv.decode(&results)) {
+    irrecv.resume();
+    if (results.value == UP_ARROW) {
+      leftWheel->setSpeed(150);
+      leftWheel->setSpeed(150);
+      
+    } else if (results.value == DOWN_ARROW) { // stop
+      leftWheel->setSpeed(0);
+      rightWheel->setSpeed(0);
+      
+    } else if (results.value == RIGHT_ARROW) {
+      leftWheel->setSpeed(255);
+      rightWheel->setSpeed(0);
+      
+    } else if (results.value == LEFT_ARROW ) {
+      leftWheel->setSpeed(0);
+      rightWheel->setSpeed(255);
+    }
+  }
+  leftWheel->run(FORWARD);
+  rightWheel->run(FORWARD);
 }
 
 // Run the motors
 void RunMotors(int turn) {
   if (turn < 0) {
-    Motor1->setSpeed(SpeedM1-abs(turn));
-    Motor2->setSpeed(SpeedM2);
+    leftWheel->setSpeed(SpeedM1-abs(turn));
+    rightWheel->setSpeed(SpeedM2);
   }
   else if (turn > 0) {
-    Motor1->setSpeed(SpeedM1);
-    Motor2->setSpeed(SpeedM2-abs(turn));
+    leftWheel->setSpeed(SpeedM1);
+    rightWheel->setSpeed(SpeedM2-abs(turn));
   } else {
-    Motor1->setSpeed(SpeedM1);
-    Motor2->setSpeed(SpeedM2);
+    leftWheel->setSpeed(SpeedM1);
+    rightWheel->setSpeed(SpeedM2);
 
   }
-  Motor1->run(FORWARD);
-  Motor2->run(FORWARD);
+  leftWheel->run(FORWARD);
+  rightWheel->run(FORWARD);
 }
 
 // print stuff to console idk
