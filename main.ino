@@ -14,7 +14,6 @@
 #define totalPhotoResistors 7
 
 // Pins
-#define S_pin A5 // PIN NUMBERS MAY NEED TO BE UPDATED !!
 #define P_pin A7
 #define I_pin A3
 #define D_pin A15
@@ -22,14 +21,18 @@
 const int RGB_Pin[3] {46,52,48};
 const int PR_Pins[totalPhotoResistors] = {A8, A9, A10, A11, A12, A13, A14};
 
-// Initial Motor Speeds. Motor speeds range from 0-255. Change speed of single motor depending on turn. 
-int SpeedM1 = 255;
-int SpeedM2 = 255;
-
 int PR_Vals[totalPhotoResistors]; // Stores the color of each photoresistor
 
 // Mode that the car is in
 int mode = 0; // ranges 0-3
+
+// basespeed
+int basespeed = 150;
+int maxspeed = 200; // ITS ABOUT SPEED ITS ABOUT POWER 
+int motor1speed;
+int motor2speed;
+
+int overLine = 1;
 
 // The highest and lowest values for each photoresistor during calibration. 
 // Each photoresistor will have different slightly different calibration
@@ -50,18 +53,13 @@ int kP;
 int kI;
 int kD;
 
-float PIDvalue;
 
-// Adjust speed of motors using 4th potentiometer (but WE want SPEEED SICKO MOED!!1
-
-int Sp;
 
 void setup() {
   
   Serial.begin(9600);
 
   // Define I/O
-  pinMode(S_pin, INPUT);
   pinMode(P_pin, INPUT);
   pinMode(I_pin, INPUT);
   pinMode(D_pin, INPUT);
@@ -88,7 +86,7 @@ void setup() {
 
 void loop() {
   readButton(); // change mode of car accordingly
-  if (mode) { // if mode = 0 the car is effectively off
+  if (1) { // if mode = 0 the car is effectively off
 
     /*  Read potentiometers
     Read photoresistors
@@ -97,8 +95,6 @@ void loop() {
     Run motors with adjusted turn rate values
     */
 
-
-    Sp = ReadPotentiometer(S_pin, 0, 1023, 0, 100);
     kP = ReadPotentiometer(P_pin, 0, 1023, 0, 100);
     kI = ReadPotentiometer(I_pin, 0, 1023, 0, 100);
     kD = ReadPotentiometer(D_pin, 0, 1023, 0, 100);
@@ -107,15 +103,16 @@ void loop() {
 
     CalcError();
 
-    calculatePID();
-
-    // Physical turn.
-
-    RunMotors(PIDvalue);
-
+    if (overLine) {
+       CalculateTurn(); // PID 
+       runMotors(); // Physical turn. If not over line then 180 in place.
+    } else {
+      motor1speed = basespeed;
+      motor2speed = basespeed;
+      Motor1->run(FORWARD);
+      Motor2->run(BACKWARD);  
+    }
     Print();
-
-
   }
   
 }
@@ -199,27 +196,37 @@ void CalcError() {
       numDetected++;
     }
   }
-  average = average / numDetected;
-  if (average != 4) {
-    error = (4 - (average));
+  if (numDetected) {
+    overLine = 1;
+    average = average / numDetected;
+    if (average != 4) {
+       error = (4 - (average));
+    } else {
+      error = 0;
+    }
   } else {
-    error = 0;
+    overLine = 0;
   }
+  
 
 
 }
 
-void calculatePID() { // I actually have no clue if this is going to work we have to test
+void CalculateTurn() { // I actually have no clue if this is going to work we have to test
   float P = error;
   float I = sumerror;
   float D = error - lastError;
 //
-  kP = kP / 1; // scale values into 0 - 100
-  kI = kI / 1000;
-  kD = kD / 100;
-
-
-  PIDvalue = (kP*P) + (kI*I) +(kD*D);
+//  kP = kP / 1; // scale values into 0 - 100
+//  kI = kI / 1000;
+//  kD = kD / 100;
+  int speedChange;
+  if (mode != 3) { // extra maybe?
+    speedChange = (kP*P) + (kI*I) +(kD*D); // PID turn
+  } else {
+    speedChange = (kP*P); // proportional turn
+  }
+  
 
   sumerror = sumerror + error;
   if (sumerror > 5) {
@@ -230,6 +237,25 @@ void calculatePID() { // I actually have no clue if this is going to work we hav
   }
 
   lastError = error;
+
+  
+
+  
+  int motor1speed = basespeed + speedChange; // MIGHT HAVE TO SWITCH MOTORS 
+  int motor2speed = basespeed - speedChange;
+  
+  if (motor1speed > maxspeed) {
+    motor1speed = maxspeed;
+  }
+  if (motor2speed > maxspeed) {
+    motor2speed = maxspeed;
+  }
+  if (motor1speed < 0) {
+    motor1speed = 0;
+  }
+  if (motor2speed < 0) {
+    motor2speed = 0;
+  } 
 
 }
 
@@ -246,19 +272,27 @@ void ledOff() {
   analogWrite(RGB_Pin[2], 0);
 }
 
-void colorSwitch() {
+void Switch() { 
   switch (mode) {
-    case 0:
+    case 0: // off
       ledOff();
+      basespeed = 0;
+      maxspeed = 0;
       break;
-    case 1:
+    case 1: // circle
       writeColor(255, 0, 0);
+      basespeed = 150;
+      maxspeed = 200;
       break;
-    case 2:
+    case 2: // frequency sweep
       writeColor(0, 255, 0);
+      basespeed = 100;
+      maxspeed = 150;
       break;
-    case 3:
+    case 3: // drag race
       writeColor(0, 0, 255);
+      basespeed = 200;
+      maxspeed = 255;
       break;
     default:
       break;
@@ -277,23 +311,14 @@ void readButton() {
     delay(200);
   } 
   
-  colorSwitch();
+  Switch();
 }
 
 // Run the motors
-void RunMotors(int turn) {
-  if (turn < 0) {
-    Motor1->setSpeed(SpeedM1-abs(turn));
-    Motor2->setSpeed(SpeedM2);
-  }
-  else if (turn > 0) {
-    Motor1->setSpeed(SpeedM1);
-    Motor2->setSpeed(SpeedM2-abs(turn));
-  } else {
-    Motor1->setSpeed(SpeedM1);
-    Motor2->setSpeed(SpeedM2);
+void runMotors() {
+  Motor1->setSpeed(motor1speed);
+  Motor2->setSpeed(motor2speed);
 
-  }
   Motor1->run(FORWARD);
   Motor2->run(FORWARD);
 }
@@ -309,13 +334,11 @@ void Print() {
 //  Serial.print(" D=");
 //  Serial.println(kD);
 
-//for (int i=0; i<totalPhotoResistors; i++) {
-//  Serial.print(PR_Vals[i]);
-//  Serial.print(" ");
-//}
 
+//
+//
 
-Serial.print(mode);
+Serial.print(analogRead(A15));
 Serial.print("\n");
 
 
