@@ -1,9 +1,8 @@
-// TO-DO: ADD LOGIC FOR MODES! I.E., CHANGE CERTAIN FACTORS DEPENDING ON THE CHALLENGE 
-// ALSO: FINE TUNE PID CONSTANTS! THIS WILL TAKE TRIAL/ERROR!
-// ACTUALLY BOTH OF THESE WILL REQUIRE TESTING!
-// ALSO THE FOURTH POTENTIOMETER'S VALUE ISNT REALLY BEING USED (GOING SLOW IS BASED)
-// IF ANYONE HAS QUESTIONS ABOUT CODE ASK ME!
-// -ARNAV
+// CHECKlist
+/*
+ * photresssitor, mapping
+ * detecting line?
+ */
 
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
@@ -24,10 +23,10 @@ int PR_Vals[totalPhotoResistors]; // Stores the color of each photoresistor
 int mode = 0; // ranges 0-3
 
 // basespeed
-int basespeed = 150;
+int basespeed = 50;
 int maxspeed = 200; // ITS ABOUT SPEED ITS ABOUT POWER 
-int motor1speed;
-int motor2speed;
+int motor1speed = 50;
+int motor2speed = 50;
 
 int overLine = 1;
 
@@ -38,12 +37,12 @@ float white_values[totalPhotoResistors];
 
 // Initialize Motors
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-Adafruit_DCMotor *Motor1 = AFMS.getMotor(1); // Motors can be switched here (1) <--> (2)Left
+Adafruit_DCMotor *Motor1 = AFMS.getMotor(3); // Motors can be switched here (1) <--> (2)Left
 Adafruit_DCMotor *Motor2 = AFMS.getMotor(2);//Right
 
 // Error
 float error, lastError = 0, sumerror = 0;
-int threshold = 20; // if photoresistor value is under threshold, it is detecting a line
+int threshold = 60; // if photoresistor value is under threshold, it is detecting a line
 
 // PID values
 int kP;
@@ -82,6 +81,7 @@ void setup() {
 }
 
 void loop() {
+    
   readButton(); // change mode of car accordingly
   if (mode) { // if mode = 0 the car is effectively off
 
@@ -95,26 +95,26 @@ void loop() {
     kP = ReadPotentiometer(P_pin, 0, 1023, 0, 100);
     kI = ReadPotentiometer(I_pin, 0, 1023, 0, 100);
     kD = ReadPotentiometer(D_pin, 0, 1023, 0, 100);
-
+//
     ReadPhotoResistors();
-
+//
     CalcError();
-    if (overLine) {
-      runMotors();
-    }
+    CalculateTurn();
+    runMotors();
 
-//    CalculateTurn();
-//    runMotors();
-
+    
 //    if (overLine) {
-//       CalculateTurn(); // PID 
-//       runMotors(); // Physical turn. If not over line then 180 in place.
+//      CalculateTurn();
+//      runMotors();
 //    } else {
-//      motor1speed = basespeed;
-//      motor2speed = basespeed;
-//      Motor1->run(FORWARD);
+//      
+//      Motor1->setSpeed(50);
+//      Motor2->setSpeed(50);
+//
+//      Motor1->run(BACKWARD); // weird but ok
 //      Motor2->run(BACKWARD);  
 //    }
+   
     Print();
   }
   
@@ -196,58 +196,60 @@ int ReadPotentiometer(int pin, int min_resolution, int max_resolution, int min_p
 // Calculate Error
 void CalcError() {
   // weighted average
-  float average = 0;
   int numDetected = 0;
-  for (int i = 0; i < totalPhotoResistors; i++) {
-    if (PR_Vals[i] < threshold) {
-      average = average + (i+1);
+  
+  int wvals = 0;
+  int total = 0;
+  for(int i =0;i<totalPhotoResistors;i++){
+    if(PR_Vals[i]>threshold){
+      wvals = PR_Vals[i]*(i+1);
+      total = PR_Vals[i];
       numDetected++;
     }
   }
-  if (numDetected) {
+  float average = (float)wvals/total;
+  if(numDetected){
     overLine = 1;
-    average = average / numDetected;
-    if (average != 4) {
-       error = (4 - (average));
-    } else {
-      error = 0;
-    }
-  } else {
+    error = average-4;
+  }else{
     overLine = 0;
   }
+//  if (numDetected) {
+//    overLine = 1;
+//    average = average/sum;//average / numDetected;
+//    if (average != 4) {
+//       error = (4-average);
+//    } else {
+//      error = 0;
+//    }
+//  } else {
+//    overLine = 0;
+//  }
   
 
 
 }
 
 void CalculateTurn() { // I actually have no clue if this is going to work we have to test
-  float P = error;
-  float I = sumerror;
-  float D = error - lastError;
+//  float P = error;
+//  float I = sumerror;
+//  float D = error - lastError;
+//////
 //
-//  kP = kP / 1; // scale values into 0 - 100
-//  kI = kI / 1000;
-//  kD = kD / 100;
-  int speedChange;
-  if (mode != 3) { // extra maybe?
-    speedChange = (kP*P) + (kI*I) +(kD*D); // PID turn
-  } else {
-    speedChange = (kP*P); // proportional turn
-  }
-  
+//  int speedChange = kP*P/3 + kI*I/3 + kD*D/3;
+//
+//
+//  sumerror = sumerror + error;
+//  if (sumerror > 5) {
+//    sumerror = 5;
+//  } // prevents integrator wind-up
+//  else if (sumerror < -5) {
+//    sumerror = -5;
+//  }
+//
+//  lastError = error;
 
-  sumerror = sumerror + error;
-  if (sumerror > 5) {
-    sumerror = 5;
-  } // prevents integrator wind-up
-  else if (sumerror < -5) {
-    sumerror = -5;
-  }
-
-  lastError = error;
-
-  
-
+  int speedChange = error*33;
   
   int motor1speed = basespeed + speedChange; // MIGHT HAVE TO SWITCH MOTORS 
   int motor2speed = basespeed - speedChange;
@@ -328,33 +330,40 @@ void runMotors() {
   Motor2->setSpeed(motor2speed);
 
   Motor1->run(FORWARD);
-  Motor2->run(FORWARD);
+  Motor2->run(BACKWARD);
+}
+
+void stopMotors() {
+ 
+
+  Motor1->run(RELEASE);
+  Motor2->run(RELEASE);
+  
 }
 
 // print stuff to console idk
 void Print() {
-//  Serial.print("S=");
-//  Serial.print(Sp);
-//  Serial.print(" P=");
-//  Serial.print(kP);
-//  Serial.print(" I=");
-//  Serial.print(kI);
-//  Serial.print(" D=");
-//  Serial.println(kD);
-
-
+//for (int i = 0; i < totalPhotoResistors; i++) {
+//  
+//  Serial.print(PR_Vals[i]);
+//  Serial.print(" ");
+//}
+//Serial.print("Detecting line: ");
+//Serial.print(overLine);
 //
+////Serial.print(analogRead(A10));
+//Serial.print("\n");
 //
-
-
-
-for (int i = 0; i < totalPhotoResistors; i++) {
-  Serial.print(analogRead(PR_Pins[i]));
-  //Serial.print(PR_Vals[i]);
-  Serial.print(" ");
-}
-Serial.print("\n");
-
+//Serial.print("kP:");
+//Serial.print(kP);
+//Serial.print(" ");
+//Serial.print("kI:");
+//Serial.print(kI);
+//Serial.print(" ");
+//Serial.print("kD:");
+//Serial.print(kD);
+//Serial.print(" ");
+Serial.println(error);
 
   
 
