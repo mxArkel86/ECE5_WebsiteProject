@@ -113,18 +113,17 @@
         <div class='box1'>
           <br>
           
-            <img src = 'https://www.pm10inc.com/wp-content/themes/micron/images/placeholders/ninzio_slider_placeholder.png' class='imgmar'>
-            <img src = 'https://www.pm10inc.com/wp-content/themes/micron/images/placeholders/ninzio_slider_placeholder.png' class='imgmar'>
+          <h3 class="label">Robot w/ Chassis, Wheels, Motors, Caster</h3>
+          <img src = 'static/robot_components.png' class='imgmar'>
+          <h3 class="label">Soldered MotorShield</h3>
+          <img src = 'static/motorshield_finished.png' class='imgmar'>
             <!-- to insert image replace the link to the image of choice ** note: keep the quotations -->
             <br>
-            <p2>IMG1 Add a picture vehicle including chassis, wheels, motors, and caster <br> 
-              IMG2 Add picture of your soldered motor shield connected to an Arduino mega</p2>
-            <br><br>
           
           <p class='box2'>
             What is the purpose of the motor driver/shield?
             <br><br>
-            &emsp; Answer here...
+            &emsp; The purpose of the driver/shield is to add soldering points onto the arduino that would otherwise not exist, as well as extending the arduino with a module capable of controlling the speed of the motors with an input voltage higher than the one output by the arduino
           </p> <!-- p is paragraph -->
         </div> <!-- This is the end of div interactive -->
       </div> <!-- This is the end of div box1 -->
@@ -139,17 +138,15 @@
         <div class='box1'>
           <br>
           
-            <img src = 'https://www.pm10inc.com/wp-content/themes/micron/images/placeholders/ninzio_slider_placeholder.png' class='imgmar'>
-            <!-- to insert image replace the link to the image of choice ** note: keep the quotations -->
+            <h3 class="label">Robot</h3>
+            <img src = 'static/robot.png' class='imgmar'>
             <br>
-            <p2>IMG1 Add a picture of your fully assembled robot with all components and circuitry</p2>
-           <br><br>
           
           <p class='box2'>
             Challenge #7: Explain why you need to calibrate your photoresistor values. 
             What problem does this help solve and what problems do you still see coming from your photoresistors?  
             <br><br>
-            &emsp; Answer here...
+            &emsp; The photoresistors have to be calibrated, because otherwise even small differences between the photoresistors could lead to vastly different readings in the same conditions. By adding a calibration step, an accurate baseline WHITE reading and BLACK reading are established, allowing all values in between.
           </p> <!-- p is paragraph -->
         </div> <!-- This is the end of div interactive -->
       </div> <!-- This is the end of div box1 -->
@@ -163,13 +160,14 @@
       <div class="interactive" id='interactive5' style='display: none'>
         <div class='box1'>
           <br>
-          
-            <img src = 'https://www.pm10inc.com/wp-content/themes/micron/images/placeholders/ninzio_slider_placeholder.png' class='imgmar'>
-            <!-- to insert image replace the link to the image of choice ** note: keep the quotations -->
-            <br>
-            <p2>IMG1 Add a picture of your robot following a line 
-              (please also attach any updated video to your submission under the video tab)</p2>
-            <br><br> 
+            <h3 class="label">Robot Following a Line</h3>
+            <img src = 'static/linefollowing.png' class='imgmar'>
+            <video>
+              <source src="static/linefollowing.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+           
+            <br> 
           
           <p class='box2'>
             What was the best PID values that you used? How well did this track? Any limitations?
