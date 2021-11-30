@@ -23,10 +23,9 @@ int PR_Vals[totalPhotoResistors]; // Stores the color of each photoresistor
 int mode = 0; // ranges 0-3
 
 // basespeed
-int basespeed = 50;
-int maxspeed = 200; // ITS ABOUT SPEED ITS ABOUT POWER 
-int motor1speed = 50;
-int motor2speed = 50;
+int basespeed = 200;
+//int maxspeed = 150; 
+
 
 int overLine = 1;
 
@@ -42,7 +41,7 @@ Adafruit_DCMotor *Motor2 = AFMS.getMotor(2);//Right
 
 // Error
 float error, lastError = 0, sumerror = 0;
-int threshold = 60; // if photoresistor value is under threshold, it is detecting a line
+int threshold = 40; // if photoresistor value is under threshold, it is detecting a line edit:OVER threshold not under
 
 // PID values
 int kP;
@@ -95,27 +94,26 @@ void loop() {
     kP = ReadPotentiometer(P_pin, 0, 1023, 0, 100);
     kI = ReadPotentiometer(I_pin, 0, 1023, 0, 100);
     kD = ReadPotentiometer(D_pin, 0, 1023, 0, 100);
-//
-    ReadPhotoResistors();
-//
-    CalcError();
-    CalculateTurn();
-    runMotors();
 
-    
+    ReadPhotoResistors();
+    CalcError();
+    runMotors(CalculateTurn());
+   
+
 //    if (overLine) {
-//      CalculateTurn();
-//      runMotors();
+//      CalcError();
+//      runMotors(CalculateTurn());
 //    } else {
-//      
-//      Motor1->setSpeed(50);
-//      Motor2->setSpeed(50);
-//
-//      Motor1->run(BACKWARD); // weird but ok
-//      Motor2->run(BACKWARD);  
+//      Motor1->setSpeed(basespeed);
+//      Motor2->setSpeed(basespeed);
+//      Motor1->run(BACKWARD); //weird but ok
+//      Motor2->run(BACKWARD);
 //    }
+
    
     Print();
+  } else {
+    stopMotors();
   }
   
 }
@@ -179,13 +177,14 @@ void Calibrate() {
 void ReadPhotoResistors() {
   for (int i = 0; i < totalPhotoResistors; i++) {
     // Syntax: map(value, fromLow, fromHigh, toLow, toHigh)
-    PR_Vals[i] = map(analogRead(PR_Pins[i]), black_values[i], white_values[i], 0, 100);
-    if (PR_Vals[i] > 100) {
-      PR_Vals[i] = 100;
-    }else if (PR_Vals[i] < 0) {
-      PR_Vals[i] = 0;
+    int raw = map(analogRead(PR_Pins[i]), black_values[i], white_values[i], 0, 100);
+    if (raw > 100) {
+      raw = 100;
+    }else if (raw < 0) {
+      raw = 0;
     }
-    delay(10);
+    PR_Vals[i] = abs(raw-100); // invert vals
+   
   }
 }
 
@@ -196,48 +195,30 @@ int ReadPotentiometer(int pin, int min_resolution, int max_resolution, int min_p
 // Calculate Error
 void CalcError() {
   // weighted average
-  int numDetected = 0;
-  
-  int wvals = 0;
   int total = 0;
+  int wvals = 0;
   for(int i =0;i<totalPhotoResistors;i++){
-    if(PR_Vals[i]>threshold){
-      wvals = PR_Vals[i]*(i+1);
-      total = PR_Vals[i];
-      numDetected++;
-    }
+     if (PR_Vals[i] > threshold) {
+       total = total + PR_Vals[i];
+       wvals = wvals + PR_Vals[i]*(i+1);
+     }
+     
   }
-  float average = (float)wvals/total;
-  if(numDetected){
+ 
+  if(total){
     overLine = 1;
-    error = average-4;
+    error = 4 - wvals/total;
   }else{
     overLine = 0;
   }
-//  if (numDetected) {
-//    overLine = 1;
-//    average = average/sum;//average / numDetected;
-//    if (average != 4) {
-//       error = (4-average);
-//    } else {
-//      error = 0;
-//    }
-//  } else {
-//    overLine = 0;
-//  }
   
-
 
 }
 
-void CalculateTurn() { // I actually have no clue if this is going to work we have to test
+int CalculateTurn() { // I actually have no clue if this is going to work we have to test
 //  float P = error;
 //  float I = sumerror;
 //  float D = error - lastError;
-//////
-//
-//  int speedChange = kP*P/3 + kI*I/3 + kD*D/3;
-//
 //
 //  sumerror = sumerror + error;
 //  if (sumerror > 5) {
@@ -248,25 +229,12 @@ void CalculateTurn() { // I actually have no clue if this is going to work we ha
 //  }
 //
 //  lastError = error;
+//
+//  return kP*P + kI*I + kD*D;
+return 32*error;
 
-  int speedChange = error*33;
-  
-  int motor1speed = basespeed + speedChange; // MIGHT HAVE TO SWITCH MOTORS 
-  int motor2speed = basespeed - speedChange;
-  
-  if (motor1speed > maxspeed) {
-    motor1speed = maxspeed;
-  }
-  if (motor2speed > maxspeed) {
-    motor2speed = maxspeed;
-  }
-  if (motor1speed < 0) {
-    motor1speed = 0;
-  }
-  if (motor2speed < 0) {
-    motor2speed = 0;
-  } 
 
+  
 }
 
 // LED Control
@@ -287,22 +255,22 @@ void Switch() {
     case 0: // off
       ledOff();
       basespeed = 0;
-      maxspeed = 0;
+      //maxspeed = 0;
       break;
     case 1: // circle
       writeColor(255, 0, 0);
-      basespeed = 150;
-      maxspeed = 200;
+      basespeed = 100;
+      //maxspeed = 200;
       break;
     case 2: // frequency sweep
       writeColor(0, 255, 0);
-      basespeed = 100;
-      maxspeed = 150;
+      basespeed = 40;
+      //maxspeed = 150;
       break;
     case 3: // drag race
       writeColor(0, 0, 255);
       basespeed = 200;
-      maxspeed = 255;
+     // maxspeed = 255;
       break;
     default:
       break;
@@ -325,7 +293,30 @@ void readButton() {
 }
 
 // Run the motors
-void runMotors() {
+void runMotors(int speedChange) {
+  int motor1speed = basespeed; // ETT
+  int motor2speed = basespeed; //RIGHT
+  if (speedChange < 0) {
+    motor1speed = motor1speed + speedChange;
+    
+  } else if (speedChange > 0) {
+    motor2speed = motor2speed - speedChange;
+  }
+  
+//  if (motor1speed > maxspeed) {
+//    motor1speed = maxspeed;
+//  }
+//  if (motor2speed > maxspeed) {
+//    motor2speed = maxspeed;
+//  }
+//  if (motor1speed < 0) {
+//    motor1speed = 0;
+//  }
+//  if (motor2speed < 0) {
+//    motor2speed = 0;
+//  } 
+
+  
   Motor1->setSpeed(motor1speed);
   Motor2->setSpeed(motor2speed);
 
