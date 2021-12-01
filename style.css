@@ -34,10 +34,6 @@ body{
     }
   
     .box2 { 
-      border: 1px solid white;
-      border-radius: 15px;
-      padding: 1rem;
-      margin: 0rem 0rem 1rem 0rem;
       color: white;
     }
   
@@ -102,6 +98,9 @@ body{
     margin: 0;
     text-align: left;
     padding: 0;
+  }
+  .resp{
+    color: gray;
   }
   
   .imgmar{

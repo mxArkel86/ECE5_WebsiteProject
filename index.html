@@ -60,21 +60,19 @@
             <h3 class="label">Potentiometer Circuit</h3>
             <img src = 'static/potentiometer_circuit.jpg' class='imgmar'>
             <br>
-            <h3 class="label">MotorShield Adafruit Module</h3>
-            <img class="imgmar" src= 'static/motorshield_back.jpg' style="display: inline-block;">
-            <img class="imgmar" src= 'static/motorshield_front.jpg' style="display: inline-block;">
-            <br>
          
-          <p class='box2'>
+          <p class="box2">
             Comments on output? 
             What range of values did your potentiometer output? 
             Did Turning your potentiometer clockwise increase or decrease the value?
-            <br><br>
-            &emsp; The potentiometer gave a numerical output between the values of 0 to 1023. Turning the potentiometer clockwise decreases the value that the potentiometer output.
-            <br><br><br> 
+            <br>
+            <p class="resp">
+            The potentiometer gave a numerical output between the values of 0 to 1023. Turning the potentiometer clockwise decreases the value that the potentiometer output.
+            </p>
             What range of values did your photo resistors output for a white surface and for a black surface?
-            <br><br>
-            &emsp; The potentiometer gave values close to 1023 when it was shown to a white surface, while giving values closer to 0 when shown a black surface. The value never really got to the extremes.
+            <p class="resp">
+            The potentiometer gave values close to 1023 when it was shown to a white surface, while giving values closer to 0 when shown a black surface. The value never really got to the extremes.
+            </p>
           </p> <!-- p is paragraph -->
         </div> <!-- This is the end of div box1 -->
       </div> <!-- This is the end of div interactive -->
@@ -94,11 +92,12 @@
             <img src = 'static/robot_chassis.jpg' class='imgmar'>
             <br><br>
           
-          <p class='box2'>
+          <p class="box2">
             Explain what you have created, what functional modifications (need at least 2) 
             you made to the design and add a picture of your 3D printed chassis. 
-            <br><br>
-            &emsp; The changes that we made to the chassis include: making a mount for the protoboard on the chassis with adequate light shielding walls and adjusting the way that the motors are mounted.
+            <br><p class="resp">
+            The changes that we made to the chassis include: making a mount for the protoboard on the chassis with adequate light shielding walls and adjusting the way that the motors are mounted.
+            </p> 
           </p> <!-- p is paragraph -->
         </div> <!-- This is the end of div interactive -->
       </div> <!-- This is the end of div box1 -->
@@ -116,14 +115,16 @@
           <h3 class="label">Robot w/ Chassis, Wheels, Motors, Caster</h3>
           <img src = 'static/robot_components.png' class='imgmar'>
           <h3 class="label">Soldered MotorShield</h3>
-          <img src = 'static/motorshield_finished.png' class='imgmar'>
+          <img class="imgmar" src= 'static/motorshield_soldered.jpeg'>
             <!-- to insert image replace the link to the image of choice ** note: keep the quotations -->
             <br>
           
           <p class='box2'>
             What is the purpose of the motor driver/shield?
-            <br><br>
-            &emsp; The purpose of the driver/shield is to add soldering points onto the arduino that would otherwise not exist, as well as extending the arduino with a module capable of controlling the speed of the motors with an input voltage higher than the one output by the arduino
+            <br>
+            <p class="resp">
+            The purpose of the driver/shield is to add soldering points onto the arduino that would otherwise not exist, as well as extending the arduino with a module capable of controlling the speed of the motors with an input voltage higher than the one output by the arduino
+            </p>
           </p> <!-- p is paragraph -->
         </div> <!-- This is the end of div interactive -->
       </div> <!-- This is the end of div box1 -->
@@ -145,8 +146,10 @@
           <p class='box2'>
             Challenge #7: Explain why you need to calibrate your photoresistor values. 
             What problem does this help solve and what problems do you still see coming from your photoresistors?  
-            <br><br>
-            &emsp; The photoresistors have to be calibrated, because otherwise even small differences between the photoresistors could lead to vastly different readings in the same conditions. By adding a calibration step, an accurate baseline WHITE reading and BLACK reading are established, allowing all values in between.
+            <br>
+            <p class="resp">
+            The photoresistors have to be calibrated, because otherwise even small differences between the photoresistors could lead to vastly different readings in the same conditions. By adding a calibration step, an accurate baseline WHITE reading and BLACK reading are established, allowing all values in between.
+            </p>
           </p> <!-- p is paragraph -->
         </div> <!-- This is the end of div interactive -->
       </div> <!-- This is the end of div box1 -->
@@ -162,23 +165,21 @@
           <br>
             <h3 class="label">Robot Following a Line</h3>
             <img src = 'static/linefollowing.png' class='imgmar'>
-            <video controls style="width: 80%; margin: 10%; display: block;">
-              <source src="static/linefollowing.mp4" type="video/mp4">
-              Your browser does not support the video tag.
-            </video>
-           
             <br> 
           
           <p class='box2'>
             What was the best PID values that you used? How well did this track? Any limitations?
-            <br><br>
-            &emsp; Having a P value that allowed one wheel to get close to stopping when turning, allowed the robot to make tighter corners at speeds, which we found beneficial.
-            <br><br><br>
+            <br>
+            <p class="resp">
+            Having a P value that allowed one wheel to get close to stopping when turning, allowed the robot to make tighter corners at speeds, which we found beneficial.
+            </p><br>
             What does PID stand for?  What is the purpose of the P, the I, and the D?  
             What steps did you take to choose the best values for your robot? 
             Explain this like you would for someone taking this course next year.
-            <br><br>
-            &emsp; PID stands for Proportional Integral Derivative. The purpose of the P is to provide immediate feedback for the robot, in converting the photoresistor values into an adequate turning circle for the robot to follow. Integral is useful for dampening sudden changes in the input values, allowing for gradual changes in direction. Meanwhile, derivative reacts stronly to quick changes in direction, meaning that sudden changes in direction can be accurately handled.
+            <br>
+            <p class="resp">
+            PID stands for Proportional Integral Derivative. The purpose of the P is to provide immediate feedback for the robot, in converting the photoresistor values into an adequate turning circle for the robot to follow. Integral is useful for dampening sudden changes in the input values, allowing for gradual changes in direction. Meanwhile, derivative reacts stronly to quick changes in direction, meaning that sudden changes in direction can be accurately handled.
+            </p>
           </p> <!-- p is paragraph -->
         </div> <!-- This is the end of div interactive -->
       </div> <!-- This is the end of div box1 -->
@@ -191,12 +192,16 @@
       
       <div class="interactive" id='interactive6' style='display: none'>
         <div class='box1'>
-          <br>
-          <p class='box2'>
-            Insert a video of your robot in action!
-          </p> <!-- p is paragraph -->
-          <iframe width="420" height="315" src="https://www.youtube.com/embed/tgbNymZ7vqY"> </iframe>
-            <br>
+          <h3 class="label">Seeding #1</h3>
+          <video controls style="width: 80%; margin: 10%; display: block;margin: 0;"">
+            <source src="static/seeding1.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <h3 class="label">Seeding #2</h3>
+          <video controls style="width: 80%; margin: 10%; display: block;margin: 0;">
+            <source src="static/seeding2.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
         </div> <!-- This is the end of div interactive -->
       </div> <!-- This is the end of div box1 -->
       
