@@ -14,7 +14,7 @@
 #define I_pin A7
 #define D_pin A8
 #define buttonPin 41
-const int RGB_Pin[3] {49,45,53};
+const int RGB_Pin[3] = {49,45,53};
 const int PR_Pins[totalPhotoResistors] = {A9, A10, A11, A12, A13, A14,A15};
 
 int PR_Vals[totalPhotoResistors]; // Stores the color of each photoresistor
@@ -23,10 +23,10 @@ int PR_Vals[totalPhotoResistors]; // Stores the color of each photoresistor
 int mode = 0; // ranges 0-3
 
 // basespeed
-int basespeed = 200;
-//int maxspeed = 150; 
+int basespeed;
+int maxspeed; 
 
-
+int proportionalGain;
 int overLine = 1;
 
 // The highest and lowest values for each photoresistor during calibration. 
@@ -47,6 +47,7 @@ int threshold = 40; // if photoresistor value is under threshold, it is detectin
 int kP;
 int kI;
 int kD;
+
 
 
 
@@ -90,25 +91,22 @@ void loop() {
     Use PID to calculate turn rate given the error
     Run motors with adjusted turn rate values
     */
-
+    
     kP = ReadPotentiometer(P_pin, 0, 1023, 0, 100);
     kI = ReadPotentiometer(I_pin, 0, 1023, 0, 100);
     kD = ReadPotentiometer(D_pin, 0, 1023, 0, 100);
+   
 
     ReadPhotoResistors();
     CalcError();
     runMotors(CalculateTurn());
    
-
-//    if (overLine) {
-//      CalcError();
-//      runMotors(CalculateTurn());
-//    } else {
-//      Motor1->setSpeed(basespeed);
-//      Motor2->setSpeed(basespeed);
-//      Motor1->run(BACKWARD); //weird but ok
-//      Motor2->run(BACKWARD);
-//    }
+ if (overLine) {
+      CalcError();
+      runMotors(CalculateTurn());
+    } else {
+      correctCourse();
+    }
 
    
     Print();
@@ -211,6 +209,8 @@ void CalcError() {
   }else{
     overLine = 0;
   }
+
+  lastError = error;
   
 
 }
@@ -231,7 +231,9 @@ int CalculateTurn() { // I actually have no clue if this is going to work we hav
 //  lastError = error;
 //
 //  return kP*P + kI*I + kD*D;
-return 32*error;
+
+
+return proportionalGain*error;
 
 
   
@@ -255,22 +257,27 @@ void Switch() {
     case 0: // off
       ledOff();
       basespeed = 0;
-      //maxspeed = 0;
+      maxspeed = 0;
       break;
     case 1: // circle
       writeColor(255, 0, 0);
-      basespeed = 100;
-      //maxspeed = 200;
+      basespeed = 140;
+      maxspeed = 180;
+      proportionalGain = 32; 
       break;
     case 2: // frequency sweep
       writeColor(0, 255, 0);
-      basespeed = 40;
-      //maxspeed = 150;
+      basespeed = 65;
+      maxspeed = 100;
+      proportionalGain = 50; 
       break;
     case 3: // drag race
       writeColor(0, 0, 255);
-      basespeed = 200;
-     // maxspeed = 255;
+      basespeed = 220;
+     
+      maxspeed = 255;
+      proportionalGain = 75; 
+      
       break;
     default:
       break;
@@ -292,29 +299,74 @@ void readButton() {
   Switch();
 }
 
+void correctCourse(){
+  if (mode == 1) {
+    if (error > 0) {
+        Motor1->setSpeed(basespeed);
+        Motor1->run(FORWARD);
+        Motor2->run(RELEASE);
+      } else {
+        Motor2->setSpeed(basespeed);
+        Motor1->run(RELEASE);
+        Motor2->run(BACKWARD);
+      }
+  } else if (mode==2) {
+    if (error > 0) {
+        Motor1->setSpeed(basespeed*2);
+        Motor2->setSpeed(basespeed*3); // backwards
+        
+        
+        Motor1->run(FORWARD);
+      
+        Motor2->run(FORWARD);
+        
+      } else {
+        Motor1->setSpeed(basespeed*3); // backwards
+        Motor2->setSpeed(basespeed*2);
+        
+        
+        Motor1->run(BACKWARD);
+        
+      
+        Motor2->run(BACKWARD);
+        
+      }
+      delay(100);
+  } 
+}
+
 // Run the motors
 void runMotors(int speedChange) {
   int motor1speed = basespeed; // ETT
   int motor2speed = basespeed; //RIGHT
-  if (speedChange < 0) {
-    motor1speed = motor1speed + speedChange;
-    
-  } else if (speedChange > 0) {
-    motor2speed = motor2speed - speedChange;
-  }
-  
-//  if (motor1speed > maxspeed) {
+
+//  if (abs(error) < 1.5) {
 //    motor1speed = maxspeed;
-//  }
-//  if (motor2speed > maxspeed) {
 //    motor2speed = maxspeed;
 //  }
-//  if (motor1speed < 0) {
-//    motor1speed = 0;
+  
+  motor1speed = motor1speed + speedChange; 
+  motor2speed = motor2speed - speedChange;
+  
+//  if (speedChange < 0) {
+//    motor1speed = motor1speed + speedChange;
+//    
+//  } else if (speedChange > 0) {
+//    motor2speed = motor2speed - speedChange;
 //  }
-//  if (motor2speed < 0) {
-//    motor2speed = 0;
-//  } 
+  
+  if (motor1speed > maxspeed) {
+    motor1speed = maxspeed;
+  }
+  if (motor2speed > maxspeed) {
+    motor2speed = maxspeed;
+  }
+  if (motor1speed < 0) {
+    motor1speed = 0;
+  }
+  if (motor2speed < 0) {
+   motor2speed = 0;
+  } 
 
   
   Motor1->setSpeed(motor1speed);
@@ -354,7 +406,7 @@ void Print() {
 //Serial.print("kD:");
 //Serial.print(kD);
 //Serial.print(" ");
-Serial.println(error);
+//Serial.println(error);
 
   
 
