@@ -100,7 +100,12 @@ body{
     padding: 0;
   }
   .resp{
-    color: gray;
+    color: rgb(110,110,110);
+    background-color: lightgray;
+    padding: 11px;
+    border-radius: 12px;
+    line-height: 140%;
+    font-size: 14px;
   }
   
   .imgmar{
