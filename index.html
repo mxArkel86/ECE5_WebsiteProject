@@ -8,17 +8,18 @@
     <meta name="description" content="sketchbook">
     <meta name="author" content="sketchbook">
     <link rel="stylesheet" href="style.css"> <!-- this imports the CSS file. do not remove -->
+    <link rel="icon" href="static/icon.jpeg">
   </head>
 
   <body>
     
 <!--   *********************  HEADING START *********************   --> 
     
-    <div class="heading">
-      <h3 class='name'>Jesse Vernallis <br> Nicholas Kading <br>Arnav Saxena <br>Anshul Garde <br></h3> 
-            
-      <h1 style="font-size: 20px;">Only Pain</h1> <!-- h1 is heading 1 -->
-    </div>
+<div class="heading" style="display: flex;">
+  <h3 class="name" style="display: inline-block;">Jesse Vernallis <br> Nicholas Kading <br>Arnav Saxena <br>Anshul Garde <br></h3> 
+  <h1 style="font-size: 20px;display: inline-block;">Only Pain</h1>
+  <img src="static/icon.jpeg" class="imgmar" style="width: 100px;height: max-content;">
+</div>
     
 <!--   *********************  HEADING END *********************   --> 
     
@@ -182,14 +183,18 @@
       
       <div class="interactive" id='interactive6' style='display: none'>
         <div class='box1'>
-          <h3 class="label">Seeding #1</h3>
-          <video controls style="width: 80%; margin: 10%; display: block;margin: 0;"">
+          <h3 class="label">Seeding #1 and #2</h3>
+          <video controls style="width: 40%; margin: 5%; display: inline-block;margin: 0;"">
             <source src="static/seeding1.mp4" type="video/mp4">
             Your browser does not support the video tag.
           </video>
-          <h3 class="label">Seeding #2</h3>
-          <video controls style="width: 80%; margin: 10%; display: block;margin: 0;">
+          <video controls style="width: 40%; margin: 5%; display: inline-block;margin: 0;">
             <source src="static/seeding2.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <h3 class="label">Final Video</h3>
+          <video controls style="width: 80%; margin: 10%; display: block;margin: 0;">
+            <source src="static/Final.mp4" type="video/mp4">
             Your browser does not support the video tag.
           </video>
         </div> <!-- This is the end of div interactive -->
